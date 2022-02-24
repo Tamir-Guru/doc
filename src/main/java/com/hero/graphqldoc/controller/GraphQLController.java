@@ -45,6 +45,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import javax.annotation.PostConstruct;
+import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -94,7 +95,7 @@ public class GraphQLController {
         SchemaParser parser = new SchemaParser();
         Resource[] resources = applicationContext.getResources("classpath*:" + properties.getSchemaLocationPattern());
         for (Resource resource : resources) {
-            typeRegistry.merge(parser.parse(resource.getInputStream()));
+            typeRegistry.merge(parser.parse(new File(resource.getURL().getFile())));
         }
         Reflections reflections = new Reflections(properties.getPackageName());
         getQueries(typeRegistry, reflections);
