@@ -94,7 +94,7 @@ public class GraphQLController {
         SchemaParser parser = new SchemaParser();
         Resource[] resources = applicationContext.getResources("classpath*:" + properties.getSchemaLocationPattern());
         for (Resource resource : resources) {
-            typeRegistry.merge(parser.parse(resource.getFile()));
+            typeRegistry.merge(parser.parse(resource.getInputStream()));
         }
         Reflections reflections = new Reflections(properties.getPackageName());
         getQueries(typeRegistry, reflections);
