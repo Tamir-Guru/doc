@@ -259,13 +259,25 @@ public class GraphQLController {
             builder.append("},");
         } else {
             builder.append(field.getName()).append(": ");
-            if (Collection.class.isAssignableFrom(field.getType())) {
-                builder.append("[ ");
-                addExample(builder, field);
-                builder.append(" ],");
-            } else {
-                addExample(builder, field);
+            checkCollectionAndCreate(builder, field);
+            builder.append(",");
+        }
+    }
+
+    private void checkCollectionAndCreate(StringBuilder builder, Field field) {
+        if (Collection.class.isAssignableFrom(field.getType())) {
+            builder.append("[ ");
+            Class<?> type = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+            if (!checksIsJava(type)) {
+                builder.append("{ ");
             }
+            addExample(builder, field);
+            if (!checksIsJava(type)) {
+                builder.append(" }");
+            }
+            builder.append(" ]");
+        } else {
+            addExample(builder, field);
         }
     }
 
@@ -277,11 +289,18 @@ public class GraphQLController {
         } else {
             type = field.getType();
         }
-        if (schemaType != null) {
-            builder.append(getFieldExample(type, schemaType.example()));
+        if (checksIsJava(type)) {
+            if (schemaType != null) {
+                builder.append(getFieldExample(type, schemaType.example()));
+            } else {
+                builder.append(getFieldExample(type, null));
+            }
         } else {
-            builder.append(getFieldExample(type, null));
+            for (Field field1 : type.getDeclaredFields()) {
+                addFieldRequestExample(builder, field1);
+            }
         }
+
     }
 
     private boolean checksIsJava(Class<?> param) {
