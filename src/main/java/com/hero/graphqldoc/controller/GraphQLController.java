@@ -36,16 +36,16 @@ import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.io.Resource;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -55,13 +55,12 @@ import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toMap;
-import static org.reflections.ReflectionUtils.getAllMethods;
-import static org.reflections.util.ReflectionUtilsPredicates.withAnnotation;
 
 @Controller
 public class GraphQLController {
@@ -71,7 +70,7 @@ public class GraphQLController {
     private static final String BLANKS = "        ";
     private static final String REQUEST_TEMPLATE = """
             %s {
-              %s%s 
+              %s%s
             %s
             }
             """;
@@ -82,6 +81,7 @@ public class GraphQLController {
     private final Map<String, JSONObject> examples = new HashMap<>();
     private final Map<String, String> returnElements = new HashMap<>();
     private final Map<String, String> requestExamples = new HashMap<>();
+
     @Autowired
     private ApplicationContext applicationContext;
 
@@ -95,34 +95,56 @@ public class GraphQLController {
         SchemaParser parser = new SchemaParser();
         Resource[] resources = applicationContext.getResources("classpath*:" + properties.getSchemaLocationPattern());
         for (Resource resource : resources) {
-            typeRegistry.merge(parser.parse(new File(resource.getURL().getFile())));
+            typeRegistry.merge(parser.parse(resource.getInputStream()));
         }
-        Reflections reflections = new Reflections(properties.getPackageName());
-        getQueries(typeRegistry, reflections);
-        getMutations(typeRegistry, reflections);
+        getQueries(typeRegistry);
+        getMutations(typeRegistry);
     }
 
-    private void getQueries(TypeDefinitionRegistry typeRegistry, Reflections reflections)
+    private void getQueries(TypeDefinitionRegistry typeRegistry)
             throws AnnotationFormatException {
         List<GraphQLTypeDetails> queries = QueryParser.getQueries(typeRegistry, GraphType.QUERY);
-        addMethods(reflections, queries, QueryType.class, "query", typeRegistry);
+        addMethods(queries, QueryType.class, "query", typeRegistry);
     }
 
-    private void getMutations(TypeDefinitionRegistry typeRegistry, Reflections reflections) throws AnnotationFormatException {
+    private void getMutations(TypeDefinitionRegistry typeRegistry) throws AnnotationFormatException {
         List<GraphQLTypeDetails> queries = QueryParser.getQueries(typeRegistry, GraphType.MUTATION);
-        addMethods(reflections, queries, MutationType.class, "mutation", typeRegistry);
+        addMethods(queries, MutationType.class, "mutation", typeRegistry);
     }
 
-    private void addMethods(Reflections reflections, List<GraphQLTypeDetails> queries, Class<? extends Annotation> annotationClass,
+    @SneakyThrows
+    public Set<Class<?>> getAnnotatedClasses(Class<? extends Annotation> annotation) {
+        Set<Class<?>> classes = new HashSet<>();
+        var scanner = new ClassPathScanningCandidateComponentProvider(false);
+        scanner.addIncludeFilter(new AnnotationTypeFilter(annotation));
+        var beans = scanner.findCandidateComponents(properties.getPackageName());
+        for (var bean : beans) {
+            var className = bean.getBeanClassName();
+            classes.add(Class.forName(className));
+        }
+        return classes;
+    }
+
+    public Set<Method> getAnnotatedMethods(Class<?> clazz, Class<? extends Annotation> annotation) {
+        Set<Method> classes = new HashSet<>();
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (method.isAnnotationPresent(annotation)) {
+                classes.add(method);
+            }
+        }
+        return classes;
+    }
+
+    private void addMethods(List<GraphQLTypeDetails> queries, Class<? extends Annotation> annotationClass,
                             String queryString, TypeDefinitionRegistry typeDefinitionRegistry) throws AnnotationFormatException {
         Map<String, GraphQLTypeDetails> queryNameList = queries.stream().collect(toMap(item -> item.getQlQueryType().getName(), i -> i));
-        Set<Class<?>> queryClasses = reflections.getTypesAnnotatedWith(annotationClass);
+        Set<Class<?>> queryClasses = getAnnotatedClasses(annotationClass);
         for (Class<?> clazz : queryClasses) {
             GraphQLType graphQLType = getGraphQlAnnotationType(annotationClass, clazz);
             GraphQLObject object = new GraphQLObject();
             object.setDescription(graphQLType.description());
             object.setKey(graphQLType.key());
-            Set<Method> methods = getAllMethods(clazz, withAnnotation(GraphQLDocDetail.class));
+            Set<Method> methods = getAnnotatedMethods(clazz, GraphQLDocDetail.class);
             List<GraphQLMethodObject> objectDetails = new ArrayList<>();
             for (Method method : methods) {
                 String name = checkMethodIsAvailable(queryNameList.keySet(), method.getName());
@@ -186,19 +208,13 @@ public class GraphQLController {
         generateMethods(method, methodObject, typeRegistry, typeDetails, stringBuilder);
 
         Parser parser = new Parser();
-        try {
-            String returnElement = "";
-            if (!checksIsJava(returnClas)) {
-                returnElement = "{" + returnElements.get(returnClas.getSimpleName()) + "}";
-            }
-            Document doc = parser.parseDocument(String.format(REQUEST_TEMPLATE, queryString, methodObject.getName(), stringBuilder, returnElement));
-            methodObject.setInputJson(AstPrinter.printAst(doc));
-
-        } catch (Exception e) {
-            System.out.println(String.format("%s {\n  %s%s {\n%s}\n}\n", queryString, methodObject.getName(), stringBuilder,
-                    this.returnElements.get(returnClas.getSimpleName())));
-            e.printStackTrace();
+        String returnElement = "";
+        if (!checksIsJava(returnClas)) {
+            returnElement = "{" + returnElements.get(returnClas.getSimpleName()) + "}";
         }
+        Document doc = parser.parseDocument(String.format(REQUEST_TEMPLATE, queryString, methodObject.getName(), stringBuilder, returnElement));
+        methodObject.setInputJson(AstPrinter.printAst(doc));
+
     }
 
     private void generateMethods(Method method, GraphQLMethodObject methodObject, TypeDefinitionRegistry typeRegistry, GraphQLTypeDetails typeDetails, StringBuilder stringBuilder) {
@@ -350,6 +366,10 @@ public class GraphQLController {
             Schema schemaType = returnClass.getAnnotation(Schema.class);
             classFields.setDescription(schemaType.description());
         }
+        createJSONs(returnClass, methodObject, paramName, obj, returnElement);
+    }
+
+    private void createJSONs(Class<?> returnClass, GraphQLMethodObject methodObject, String paramName, JSONObject obj, StringBuilder returnElement) {
         if (paramName == null) {
             JSONObject objData = new JSONObject();
             JSONObject objField = new JSONObject();
