@@ -34,6 +34,7 @@ import io.leangen.geantyref.AnnotationFormatException;
 import io.leangen.geantyref.TypeFactory;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,8 +70,8 @@ public class GraphQLController {
     private static final String BLANKS = "        ";
     private static final String REQUEST_TEMPLATE = """
             %s {
-              %s%s {
-            %s}
+              %s%s 
+            %s
             }
             """;
     private final GraphQLDocProperties properties;
@@ -185,12 +186,16 @@ public class GraphQLController {
 
         Parser parser = new Parser();
         try {
-            Document doc = parser.parseDocument(String.format(REQUEST_TEMPLATE, queryString, methodObject.getName(), stringBuilder,
-                    returnElements.get(returnClas.getSimpleName())));
+            String returnElement = "";
+            if (!checksIsJava(returnClas)) {
+                returnElement = "{" + returnElements.get(returnClas.getSimpleName()) + "}";
+            }
+            Document doc = parser.parseDocument(String.format(REQUEST_TEMPLATE, queryString, methodObject.getName(), stringBuilder, returnElement));
             methodObject.setInputJson(AstPrinter.printAst(doc));
 
         } catch (Exception e) {
-            System.out.println(stringBuilder);
+            System.out.println(String.format("%s {\n  %s%s {\n%s}\n}\n", queryString, methodObject.getName(), stringBuilder,
+                    this.returnElements.get(returnClas.getSimpleName())));
             e.printStackTrace();
         }
     }
@@ -304,7 +309,7 @@ public class GraphQLController {
     }
 
     private boolean checksIsJava(Class<?> param) {
-        return param.isPrimitive() || param.getPackageName().startsWith(JAVA);
+        return param.isPrimitive() || param.getPackageName().startsWith(JAVA) || Enum.class.isAssignableFrom(param);
     }
 
     @SneakyThrows
@@ -348,9 +353,16 @@ public class GraphQLController {
             JSONObject objData = new JSONObject();
             JSONObject objField = new JSONObject();
             objData.put("data", objField);
-            objField.put(methodObject.getName(), obj);
-            examples.put(returnClass.getSimpleName(), objData);
-            returnElements.put(returnClass.getSimpleName(), returnElement.toString());
+            if (checksIsJava(returnClass)) {
+                objField.put(methodObject.getName(), getFieldExample(returnClass, null));
+                examples.put(returnClass.getSimpleName(), objData);
+            } else {
+                objField.put(methodObject.getName(), obj);
+                examples.put(returnClass.getSimpleName(), objData);
+            }
+            if (!checksIsJava(returnClass)) {
+                returnElements.put(returnClass.getSimpleName(), returnElement.toString());
+            }
         } else if (methodObject.getName() == null) {
             examples.put(returnClass.getSimpleName(), obj);
         }
@@ -417,23 +429,28 @@ public class GraphQLController {
     }
 
     private Object getObjectExample(Class<?> field, String example) {
-        if (field.equals(boolean.class) || field.equals(Boolean.class)) {
-            return Boolean.valueOf(example != null ? example : "true");
-        } else if (Number.class.isAssignableFrom(field) || field.equals(int.class) || field.equals(double.class) ||
-                field.equals(long.class) || field.equals(float.class) || field.equals(short.class)) {
-            return example != null ? example : 1;
-        }
+        Object example1 = getAndReturnExample(field, example);
+        if (example1 != null) return example1;
         return example != null ? example : "";
     }
 
     private Object getFieldExample(Class<?> field, String example) {
+        Object example1 = getAndReturnExample(field, example);
+        if (example1 != null) return example1;
+        return example != null ? getStringQuotas(example) : "\"\"";
+    }
+
+    @Nullable
+    private Object getAndReturnExample(Class<?> field, String example) {
         if (field.equals(boolean.class) || field.equals(Boolean.class)) {
             return Boolean.valueOf(example != null ? example : "true");
         } else if (Number.class.isAssignableFrom(field) || field.equals(int.class) || field.equals(double.class) ||
                 field.equals(long.class) || field.equals(float.class) || field.equals(short.class)) {
             return example != null ? example : 1;
+        } else if (Enum.class.isAssignableFrom(field)) {
+            return example != null ? example : field.getEnumConstants()[0].toString();
         }
-        return example != null ? getStringQuotas(example) : "\"\"";
+        return null;
     }
 
     private String getStringQuotas(String str) {
