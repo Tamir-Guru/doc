@@ -19,6 +19,4 @@ public @interface GraphQLDocDetail {
 
     String description();
 
-    GraphQLResponse[] value() default {};
-
 }

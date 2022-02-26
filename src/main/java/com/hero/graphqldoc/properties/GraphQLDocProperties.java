@@ -25,5 +25,6 @@ public class GraphQLDocProperties {
     private String url = "index.html";
     private String logoUrl = "assets/images/logo.png";
     private String appVersion = "v1.0.0";
+    private String endpoint = "/document";
 
 }

@@ -99,6 +99,7 @@ public class GraphQLController {
         }
         getQueries(typeRegistry);
         getMutations(typeRegistry);
+        getSubscriptions(typeRegistry);
     }
 
     private void getQueries(TypeDefinitionRegistry typeRegistry)
@@ -110,6 +111,11 @@ public class GraphQLController {
     private void getMutations(TypeDefinitionRegistry typeRegistry) throws AnnotationFormatException {
         List<GraphQLTypeDetails> queries = QueryParser.getQueries(typeRegistry, GraphType.MUTATION);
         addMethods(queries, MutationType.class, "mutation", typeRegistry);
+    }
+
+    private void getSubscriptions(TypeDefinitionRegistry typeRegistry) throws AnnotationFormatException {
+        List<GraphQLTypeDetails> queries = QueryParser.getQueries(typeRegistry, GraphType.SUBSCRIPTION);
+        addMethods(queries, MutationType.class, "subscription", typeRegistry);
     }
 
     @SneakyThrows
@@ -493,7 +499,7 @@ public class GraphQLController {
         return "\"" + str + "\"";
     }
 
-    @GetMapping(value = "/document")
+    @GetMapping(value = "${graphql.doc.endpoint:/document}")
     public String getInfo(Model model) {
         setSocialLinks(model);
         model.addAttribute("title", properties.getTitle());
