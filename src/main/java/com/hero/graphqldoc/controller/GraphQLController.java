@@ -16,6 +16,7 @@ import com.hero.graphqldoc.annotations.ParameterType;
 import com.hero.graphqldoc.annotations.QueryType;
 import com.hero.graphqldoc.annotations.Schema;
 import com.hero.graphqldoc.annotations.SchemaType;
+import com.hero.graphqldoc.annotations.SubscriptionType;
 import com.hero.graphqldoc.enums.GraphType;
 import com.hero.graphqldoc.models.FieldDetails;
 import com.hero.graphqldoc.models.GraphQLClassFields;
@@ -89,6 +90,9 @@ public class GraphQLController {
         this.properties = properties;
     }
 
+    /**
+     * This method is used to init the GraphQL schema
+     */
     @PostConstruct
     private void init() throws IOException, AnnotationFormatException {
         TypeDefinitionRegistry typeRegistry = new TypeDefinitionRegistry();
@@ -102,22 +106,43 @@ public class GraphQLController {
         getSubscriptions(typeRegistry);
     }
 
+    /**
+     * Creates the GraphQL schema for the queries
+     *
+     * @param typeRegistry schema details
+     */
     private void getQueries(TypeDefinitionRegistry typeRegistry)
             throws AnnotationFormatException {
         List<GraphQLTypeDetails> queries = QueryParser.getQueries(typeRegistry, GraphType.QUERY);
         addMethods(queries, QueryType.class, "query", typeRegistry);
     }
 
+    /**
+     * Creates the GraphQL schema for the mutations
+     *
+     * @param typeRegistry schema details
+     */
     private void getMutations(TypeDefinitionRegistry typeRegistry) throws AnnotationFormatException {
         List<GraphQLTypeDetails> queries = QueryParser.getQueries(typeRegistry, GraphType.MUTATION);
         addMethods(queries, MutationType.class, "mutation", typeRegistry);
     }
 
+    /**
+     * Creates the GraphQL schema for the subscriptions
+     *
+     * @param typeRegistry schema details
+     */
     private void getSubscriptions(TypeDefinitionRegistry typeRegistry) throws AnnotationFormatException {
         List<GraphQLTypeDetails> queries = QueryParser.getQueries(typeRegistry, GraphType.SUBSCRIPTION);
         addMethods(queries, MutationType.class, "subscription", typeRegistry);
     }
 
+    /**
+     * This method is used to get the classes with GraphQL annotations
+     *
+     * @param annotation like @GraphQLQuery, @GraphQLMutation, @GraphQLSubscription
+     * @return classes annotated with the given annotation
+     */
     @SneakyThrows
     public Set<Class<?>> getAnnotatedClasses(Class<? extends Annotation> annotation) {
         Set<Class<?>> classes = new HashSet<>();
@@ -131,6 +156,12 @@ public class GraphQLController {
         return classes;
     }
 
+    /**
+     * This method is used to get the class methods with GraphQL annotations
+     *
+     * @param annotation with @GraphQLDocDetail
+     * @return methods annotated with the given annotation
+     */
     public Set<Method> getAnnotatedMethods(Class<?> clazz, Class<? extends Annotation> annotation) {
         Set<Method> classes = new HashSet<>();
         for (Method method : clazz.getDeclaredMethods()) {
@@ -141,6 +172,10 @@ public class GraphQLController {
         return classes;
     }
 
+    /**
+     * This method creates requests, responses for given GraphQL queries.
+     * It also creates the GraphQL schema for the queries
+     */
     private void addMethods(List<GraphQLTypeDetails> queries, Class<? extends Annotation> annotationClass,
                             String queryString, TypeDefinitionRegistry typeDefinitionRegistry) throws AnnotationFormatException {
         Map<String, GraphQLTypeDetails> queryNameList = queries.stream().collect(toMap(item -> item.getQlQueryType().getName(), i -> i));
@@ -170,6 +205,10 @@ public class GraphQLController {
         }
     }
 
+    /**
+     * Map sub annotation fields to Main annotation (@GraphQLType) fields
+     * for generic use
+     */
     private GraphQLType getGraphQlAnnotationType(Class<? extends Annotation> annotationClass, Class<?> clazz) throws AnnotationFormatException {
         if (annotationClass.isAssignableFrom(QueryType.class)) {
             QueryType queryType = clazz.getAnnotation(QueryType.class);
@@ -179,10 +218,19 @@ public class GraphQLController {
             MutationType queryType = clazz.getAnnotation(MutationType.class);
             Map<String, Object> annotationParameters = getMap(queryType.key(), queryType.description(), "Mutation");
             return TypeFactory.annotation(GraphQLType.class, annotationParameters);
+        } else if (annotationClass.isAssignableFrom(SubscriptionType.class)) {
+            SubscriptionType queryType = clazz.getAnnotation(SubscriptionType.class);
+            Map<String, Object> annotationParameters = getMap(queryType.key(), queryType.description(), "Subscription");
+            return TypeFactory.annotation(GraphQLType.class, annotationParameters);
         }
         return null;
     }
 
+    /**
+     * Get annotation field maps
+     *
+     * @return hashmap of annotation fields
+     */
     @NotNull
     private Map<String, Object> getMap(String queryType, String queryType1, String type) {
         Map<String, Object> annotationParameters = new HashMap<>();
@@ -192,6 +240,10 @@ public class GraphQLController {
         return annotationParameters;
     }
 
+    /**
+     * Generates graphQL query for given class and method
+     * This method prepare all required fields for HTML
+     */
     private void createClassFields(Method method, GraphQLMethodObject methodObject, Map<String, GraphQLTypeDetails> queryNameList, String queryString,
                                    TypeDefinitionRegistry typeRegistry) {
         Class<?> returnClas;
@@ -223,7 +275,11 @@ public class GraphQLController {
 
     }
 
-    private void generateMethods(Method method, GraphQLMethodObject methodObject, TypeDefinitionRegistry typeRegistry, GraphQLTypeDetails typeDetails, StringBuilder stringBuilder) {
+    /**
+     * Prepares method params for graphQL schema
+     */
+    private void generateMethods(Method method, GraphQLMethodObject methodObject, TypeDefinitionRegistry typeRegistry,
+                                 GraphQLTypeDetails typeDetails, StringBuilder stringBuilder) {
         if (method.getParameters() != null && method.getParameters().length > 0) {
             stringBuilder.append("(");
             for (Parameter parameter : method.getParameters()) {
@@ -240,6 +296,9 @@ public class GraphQLController {
         }
     }
 
+    /**
+     * Adds param examples for graphQL schema
+     */
     private void addParamExample(StringBuilder stringBuilder, Parameter parameter) {
         if (parameter.getType().getName().startsWith(JAVA)) {
             generateParamRequest(parameter, stringBuilder);
@@ -256,6 +315,9 @@ public class GraphQLController {
         }
     }
 
+    /**
+     * Generates example for Java classes like String and Integer
+     */
     private void generateParamRequest(Parameter param, StringBuilder stringBuilder) {
         stringBuilder.append(param.getName()).append(":").append(" ");
         ParameterType schemaType = param.getAnnotation(ParameterType.class);
@@ -266,6 +328,9 @@ public class GraphQLController {
         }
     }
 
+    /**
+     * Generates example for method parameters
+     */
     private void generateExampleRequest(Parameter param) {
         StringBuilder builder = new StringBuilder();
         builder.append(param.getName()).append(": ").append("{");
@@ -279,6 +344,9 @@ public class GraphQLController {
         requestExamples.put(param.getType().getSimpleName(), builder.toString());
     }
 
+    /**
+     * Adds example value for given fields for request object
+     */
     private void addFieldRequestExample(StringBuilder builder, Field field) {
         if (!checksIsJava(field.getType())) {
             builder.append(field.getName()).append(": {");
@@ -295,6 +363,11 @@ public class GraphQLController {
         }
     }
 
+    /**
+     * Checks if element is collection and adds example value
+     * If yes, gets main type of collection
+     * If no adds example value
+     */
     private void checkCollectionAndCreate(StringBuilder builder, Field field) {
         if (Collection.class.isAssignableFrom(field.getType())) {
             builder.append("[ ");
@@ -312,6 +385,9 @@ public class GraphQLController {
         }
     }
 
+    /**
+     * Adds example value for given field for params
+     */
     private void addExample(StringBuilder builder, Field field) {
         SchemaType schemaType = field.getAnnotation(SchemaType.class);
         Class<?> type;
@@ -334,10 +410,22 @@ public class GraphQLController {
 
     }
 
+    /**
+     * Checks if given type is java type
+     *
+     * @param param class type
+     * @return true if java type
+     */
     private boolean checksIsJava(Class<?> param) {
         return param.isPrimitive() || param.getPackageName().startsWith(JAVA) || Enum.class.isAssignableFrom(param);
     }
 
+    /**
+     * Creates all details of given class ttype
+     * Creates example request
+     * Creates return value
+     * Creates request params
+     */
     @SneakyThrows
     private void createClassDefinitions(GraphQLTypeDetails typeDetails, Class<?> returnClass, GraphQLMethodObject methodObject,
                                         String paramName, TypeDefinitionRegistry typeRegistry, JSONObject obj, StringBuilder returnElement) {
@@ -378,6 +466,10 @@ public class GraphQLController {
         createJSONs(returnClass, methodObject, paramName, obj, returnElement);
     }
 
+    /**
+     * get fields from given class
+     * Its also gets superclass fields
+     */
     @SuppressWarnings("java:S108")
     private Field getField(Class<?> clazz, String fieldName) throws NoSuchFieldException {
         Class<?> current = clazz;
@@ -390,6 +482,9 @@ public class GraphQLController {
         throw new NoSuchFieldException(fieldName);
     }
 
+    /**
+     * Create example response JSON
+     */
     private void createJSONs(Class<?> returnClass, GraphQLMethodObject methodObject, String paramName, JSONObject obj, StringBuilder returnElement) {
         if (paramName == null) {
             JSONObject objData = new JSONObject();
@@ -410,6 +505,9 @@ public class GraphQLController {
         }
     }
 
+    /**
+     * Checks and add example to response json
+     */
     private void setExamples(JSONObject obj, Field field, String name, GraphQLField fieldObject) {
         SchemaType schemaType = field.getAnnotation(SchemaType.class);
         if (schemaType != null) {
@@ -423,6 +521,13 @@ public class GraphQLController {
         }
     }
 
+    /**
+     * Checks if field is list
+     * If true return list element type
+     * If false return element type
+     *
+     * @return element type
+     */
     private Class<?> checkListType(Field field, GraphQLField fieldObject, StringBuilder returnElement) {
         if (Boolean.TRUE.equals(fieldObject.getListType())) {
             returnElement.append(field.getName()).append(BLANKS);
@@ -436,6 +541,9 @@ public class GraphQLController {
         return field.getType();
     }
 
+    /**
+     * Creates map for GraphQL definition to Java object mapping
+     */
     private void addNamesToMap(Class<?> returnClass, String paramName, GraphQLClassFields classFields, GraphQLTypeDetails typeDetails) {
         if (!checksIsJava(returnClass)) {
             objectTypeMap.putIfAbsent(returnClass.getSimpleName(), classFields);
@@ -453,6 +561,9 @@ public class GraphQLController {
         }
     }
 
+    /**
+     * Returns schema method name for java method name
+     */
     private String checkMethodIsAvailable(Set<String> queries, String methodName) {
         if (queries.contains(methodName)) {
             return methodName;
@@ -470,18 +581,34 @@ public class GraphQLController {
         }
     }
 
+    /**
+     * Returns example value for request object
+     *
+     * @return example value
+     */
     private Object getObjectExample(Class<?> field, String example) {
         Object example1 = getAndReturnExample(field, example);
         if (example1 != null) return example1;
         return example != null ? example : "";
     }
 
+    /**
+     * Returns example value for response object
+     *
+     * @return example value
+     */
     private Object getFieldExample(Class<?> field, String example) {
         Object example1 = getAndReturnExample(field, example);
         if (example1 != null) return example1;
         return example != null ? getStringQuotas(example) : "\"\"";
     }
 
+    /**
+     * Checks element type and returns example value
+     * If not exists example, return default value
+     *
+     * @return example value
+     */
     @Nullable
     private Object getAndReturnExample(Class<?> field, String example) {
         if (field.equals(boolean.class) || field.equals(Boolean.class)) {
@@ -495,10 +622,22 @@ public class GraphQLController {
         return null;
     }
 
+    /**
+     * Creates example string value with addtional quotes
+     *
+     * @param str original string
+     * @return string with quotes
+     */
     private String getStringQuotas(String str) {
         return "\"" + str + "\"";
     }
 
+    /**
+     * Add required objects to thymeleaf model
+     *
+     * @param model for thymeleaf template
+     * @return thymeleaf path
+     */
     @GetMapping(value = "${graphql.doc.endpoint:/document}")
     public String getInfo(Model model) {
         setSocialLinks(model);
@@ -511,6 +650,11 @@ public class GraphQLController {
         return "index.html";
     }
 
+    /**
+     * Add social links to thymeleaf model
+     *
+     * @param model for thymeleaf template
+     */
     private void setSocialLinks(Model model) {
         model.addAttribute("instagramLink", properties.getInstagramLink());
         model.addAttribute("linkedinLink", properties.getLinkedinLink());
