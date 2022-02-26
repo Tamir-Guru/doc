@@ -17,12 +17,12 @@ public class GraphQLDocProperties {
     private Boolean enabled = false;
     private String packageName = "";
     private String title = "GraphQL Doc";
-    private String description = "Welcome Documentation";
+    private String docDescription = "Welcome Documentation";
     private String supportLink;
     private String twitterLink;
     private String linkedinLink;
     private String instagramLink;
-    private String url = "index.html";
+    private String siteUrl = "index.html";
     private String logoUrl = "assets/images/logo.png";
     private String appVersion = "v1.0.0";
     private String endpoint = "/document";
