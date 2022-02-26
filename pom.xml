@@ -5,7 +5,7 @@
     <groupId>com.hero</groupId>
     <artifactId>graphqldoc</artifactId>
     <packaging>jar</packaging>
-    <version>0.1.2-SNAPSHOT</version>
+    <version>0.1.2</version>
     <name>graphqldoc</name>
     <description>graphqldoc</description>
     <properties>
