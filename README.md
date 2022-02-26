@@ -14,7 +14,7 @@ You should add following dependency to your `pom.xml`:
             <version>0.1.0</version>
     </dependency>
 
-### Enable Doucmentation
+### Enable Documentation
 
 You should add following property to your `application.properties`:
 
