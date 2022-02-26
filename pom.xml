@@ -5,7 +5,7 @@
     <groupId>com.tamirguru</groupId>
     <artifactId>graphqldoc</artifactId>
     <packaging>jar</packaging>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
     <name>GraphQL Spring Boot Kickstarter Auto Documentation</name>
     <description>This project auto generates graphql documentation for GraphQL Kickstart Spring Boot applications.
     </description>
@@ -75,6 +75,11 @@
             <artifactId>json</artifactId>
             <version>20211205</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>31.0.1-jre</version>
         </dependency>
     </dependencies>
 

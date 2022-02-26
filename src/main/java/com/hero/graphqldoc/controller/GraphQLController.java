@@ -643,7 +643,7 @@ public class GraphQLController {
         setSocialLinks(model);
         model.addAttribute("title", properties.getTitle());
         model.addAttribute("supportLink", properties.getSupportLink());
-        model.addAttribute("docdescription", properties.getDescription());
+        model.addAttribute("docdescription", properties.getDocDescription());
         model.addAttribute("details", map);
         model.addAttribute("objectTypes", objectTypeMap);
         model.addAttribute("graphQLToJavaMap", graphQLToJavaMap);
@@ -659,7 +659,7 @@ public class GraphQLController {
         model.addAttribute("instagramLink", properties.getInstagramLink());
         model.addAttribute("linkedinLink", properties.getLinkedinLink());
         model.addAttribute("twitterLink", properties.getTwitterLink());
-        model.addAttribute("url", properties.getUrl());
+        model.addAttribute("siteUrl", properties.getSiteUrl());
         model.addAttribute("logoUrl", properties.getLogoUrl());
         model.addAttribute("appVersion", properties.getAppVersion());
     }
