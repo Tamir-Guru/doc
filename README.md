@@ -6,30 +6,15 @@
 
 #### Adding dependency
 
-You should add GraphQL support to your Spring Boot application by adding the following repository to your `pom.xml`:
-
-    <repositories>
-        <repository>
-            <id>ogzkhrmn-tamirguru</id>
-            <url>https://packagecloud.io/ogzkhrmn/tamirguru/maven2</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
 You should add following dependency to your `pom.xml`:
 
     <dependency>
             <groupId>com.hero</groupId>
             <artifactId>graphqldoc</artifactId>
-            <version>0.1.1-SNAPSHOT</version>
+            <version>0.1.0</version>
     </dependency>
 
-### Enable Doucmentation
+### Enable Documentation
 
 You should add following property to your `application.properties`:
 
