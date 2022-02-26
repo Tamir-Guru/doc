@@ -263,9 +263,12 @@ public class GraphQLController {
     private void generateExampleRequest(Parameter param) {
         StringBuilder builder = new StringBuilder();
         builder.append(param.getName()).append(": ").append("{");
-        for (Field field : param.getType().getDeclaredFields()) {
-            addFieldRequestExample(builder, field);
-        }
+        Class<?> current = param.getType();
+        do {
+            for (Field field : current.getDeclaredFields()) {
+                addFieldRequestExample(builder, field);
+            }
+        } while ((current = current.getSuperclass()) != null);
         builder.append("}");
         requestExamples.put(param.getType().getSimpleName(), builder.toString());
     }
@@ -337,7 +340,7 @@ public class GraphQLController {
         addNamesToMap(returnClass, paramName, classFields, typeDetails);
         List<FieldDetails> fieldDefinitions = QueryParser.example(typeRegistry, graphQLToJavaMap.get(returnClass.getSimpleName()));
         for (FieldDetails fieldDefinition : fieldDefinitions) {
-            Field field = returnClass.getDeclaredField(fieldDefinition.getName());
+            Field field = getField(returnClass, fieldDefinition.getName());
             String name = field.getName();
             GraphQLField fieldObject = new GraphQLField();
             fieldObject.setName(name);
@@ -367,6 +370,18 @@ public class GraphQLController {
             classFields.setDescription(schemaType.description());
         }
         createJSONs(returnClass, methodObject, paramName, obj, returnElement);
+    }
+
+    @SuppressWarnings("java:S108")
+    private Field getField(Class<?> clazz, String fieldName) throws NoSuchFieldException {
+        Class<?> current = clazz;
+        do {
+            try {
+                return current.getDeclaredField(fieldName);
+            } catch (Exception ignored) {
+            }
+        } while ((current = current.getSuperclass()) != null);
+        throw new NoSuchFieldException(fieldName);
     }
 
     private void createJSONs(Class<?> returnClass, GraphQLMethodObject methodObject, String paramName, JSONObject obj, StringBuilder returnElement) {

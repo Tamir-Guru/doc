@@ -68,7 +68,7 @@ public class DocAutoConfig {
         resolver.setTemplateMode("HTML");
         resolver.setSuffix(".html");
         resolver.setCacheable(true);
-        resolver.setCharacterEncoding("ISO-8859-9");
+        resolver.setCharacterEncoding("UTF-8");
         templateEngine.addTemplateResolver(resolver);
     }
 
