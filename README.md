@@ -11,9 +11,9 @@
 You should add following dependency to your `pom.xml`:
 
     <dependency>
-            <groupId>com.hero</groupId>
+            <groupId>com.tamirguru</groupId>
             <artifactId>graphqldoc</artifactId>
-            <version>0.1.0</version>
+            <version>0.1.1</version>
     </dependency>
 
 ### Enable Documentation
@@ -27,13 +27,13 @@ You should add following property to your `application.properties`:
     graphql.doc.schema-location-pattern:.graphqls file path like **/*.graphqls
     graphql.doc.endpoint:url endpoint like /document (Don't forget to att autorized urls)
     graphql.doc.title=Title of document
-    graphql.doc.description=Document description
+    graphql.doc.doc-description=Document description
     graphql.doc.package-name=Package name for resolvers
     graphql.doc.support-link=Support link like maito:x@x.com
     graphql.doc.instagram-link=Instagram page link
     graphql.doc.linkedin-link=LinkedIn page link
     graphql.doc.twitter-link=Twitter page link
-    graphql.doc.url=Logo click link 
+    graphql.doc.site-url=Logo click link 
     graphql.doc.logo-url=logo url
     graphql.doc.app-version=Document version
 
