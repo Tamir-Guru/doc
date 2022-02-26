@@ -1,3 +1,5 @@
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.tamirguru/graphqldoc/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.tamirguru/graphqldoc)
+
 ### GraphQL Documentation support for [graphql-spring-boot](https://github.com/graphql-java-kickstart/graphql-spring-boot)
 
 ---
@@ -50,9 +52,8 @@ All have `key` and `description` properties.
 - **Description:** The description of resolver
 - **Key:** Title key for resolver
 
-    @QueryType(description = "Example Query Operations", key = "Example Query")
-    public class ExampleResolver implements GraphQLQueryResolver {
-    }
+  @QueryType(description = "Example Query Operations", key = "Example Query")
+  public class ExampleResolver implements GraphQLQueryResolver { }
 
 ### Resolver Methods
 
