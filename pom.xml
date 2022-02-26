@@ -5,9 +5,25 @@
     <groupId>com.hero</groupId>
     <artifactId>graphqldoc</artifactId>
     <packaging>jar</packaging>
-    <version>0.1.2</version>
-    <name>graphqldoc</name>
-    <description>graphqldoc</description>
+    <version>0.1.0</version>
+    <name>GraphQL Kickstarter Auto Documentation</name>
+    <description>This project auto generates graphql documentation for GraphQL Kickstart Spring Boot applications.
+    </description>
+    <url>https://github.com/Tamir-Guru/doc</url>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Oguz Kahraman</name>
+            <email>oguzkahraman52@gmail.com</email>
+            <organization>Yildiz Technical University</organization>
+            <organizationUrl>https://www.yildiz.edu.tr</organizationUrl>
+        </developer>
+    </developers>
     <properties>
         <java.version>17</java.version>
     </properties>
@@ -109,15 +125,23 @@
             </extension>
         </extensions>
     </build>
+
     <distributionManagement>
-        <repository>
-            <id>packagecloud-ogzkhrmn</id>
-            <url>packagecloud+https://packagecloud.io/ogzkhrmn/tamirguru</url>
-        </repository>
         <snapshotRepository>
-            <id>packagecloud-ogzkhrmn</id>
-            <url>packagecloud+https://packagecloud.io/ogzkhrmn/tamirguru</url>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
     </distributionManagement>
+
+    <scm>
+        <connection>scm:git:git@github.com:Tamir-Guru/doc.git</connection>
+        <developerConnection>scm:git:ssh://github.com:Tamir-Guru/doc.git</developerConnection>
+        <url>https://github.com/Tamir-Guru/doc/tree/release/live</url>
+    </scm>
+
 
 </project>
