@@ -18,5 +18,6 @@ public class GraphQLMethodObject {
     private String outputJson;
     private String outputName;
     private String inputJson;
+    private String authString;
 
 }

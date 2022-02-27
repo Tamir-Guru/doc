@@ -146,6 +146,8 @@
 										    th:text="${object.operation} +' ('+ ${object.name}+')'"></h4>
 										<p th:text="${object.description}"></p>
 										<p>Request</p>
+										<div style="color: red" th:if="${object.authString != null}"
+										     th:text="${object.authString}"></div>
 										<div style="background-color: #E7E5E5; padding: 10px; border-radius: 10px; align-items: center;">
 											<pre style="margin: 0" th:text="${object.inputJson}"></pre>
 										</div>

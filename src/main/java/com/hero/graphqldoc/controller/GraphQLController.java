@@ -42,6 +42,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.io.Resource;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.springframework.expression.Expression;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.ast.MethodReference;
+import org.springframework.expression.spel.ast.StringLiteral;
+import org.springframework.expression.spel.standard.SpelExpression;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -66,6 +73,7 @@ import static java.util.stream.Collectors.toMap;
 @Controller
 public class GraphQLController {
 
+    private static final String SECURE_TEXT = "Only for authenticated users with roles : %s";
     private static final String JAVA = "java.";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String BLANKS = "        ";
@@ -134,7 +142,7 @@ public class GraphQLController {
      */
     private void getSubscriptions(TypeDefinitionRegistry typeRegistry) throws AnnotationFormatException {
         List<GraphQLTypeDetails> queries = QueryParser.getQueries(typeRegistry, GraphType.SUBSCRIPTION);
-        addMethods(queries, MutationType.class, "subscription", typeRegistry);
+        addMethods(queries, SubscriptionType.class, "subscription", typeRegistry);
     }
 
     /**
@@ -196,12 +204,40 @@ public class GraphQLController {
                     methodObject.setName(name);
                     methodObject.setMethodName(method.getName());
                     methodObject.setOperation(graphQLDocDetail.operation());
+                    methodObject.setAuthString(createAuthString(method));
                     objectDetails.add(methodObject);
                     createClassFields(method, methodObject, queryNameList, queryString, typeDefinitionRegistry);
                 }
             }
             object.setObjects(objectDetails);
             map.put(graphQLType.key().replace(" ", "_"), object);
+        }
+    }
+
+    private String createAuthString(Method method) {
+        ExpressionParser parser = new SpelExpressionParser();
+        PreAuthorize authorize = method.getAnnotation(PreAuthorize.class);
+        if (authorize == null) {
+            return null;
+        }
+        Expression expression = parser.parseExpression(authorize.value());
+        MethodReference reference = ((MethodReference) ((SpelExpression) expression).getAST());
+        switch (reference.getName()) {
+            case "isAnonymous":
+                return "Only anonymous users can access this resource";
+            case "hasRole", "hasAnyRole":
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < reference.getChildCount(); i++) {
+                    StringLiteral node = (StringLiteral) reference.getChild(i);
+                    if (node.getOriginalValue() != null) {
+                        builder.append(node.getOriginalValue().replaceAll("ROLE_", "")).append(", ");
+                    }
+                }
+                return String.format(SECURE_TEXT, builder.substring(0, builder.toString().length() - 2));
+            case "isAuthenticated":
+                return String.format(SECURE_TEXT, "Any Role");
+            default:
+                return null;
         }
     }
 
