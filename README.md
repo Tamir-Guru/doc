@@ -1,4 +1,4 @@
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.tamirguru/graphqldoc/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.tamirguru/graphqldoc)
+[![Maven Central](https://img.shields.io/maven-central/v/com.tamirguru/graphqldoc.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22com.tamirguru%22%20AND%20a:%22graphqldoc%22)
 
 ### GraphQL Documentation support for [graphql-spring-boot](https://github.com/graphql-java-kickstart/graphql-spring-boot)
 
