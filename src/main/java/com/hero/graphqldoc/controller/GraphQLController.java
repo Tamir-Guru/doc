@@ -480,14 +480,10 @@ public class GraphQLController {
 
             setExamples(obj, field, name, fieldObject);
             if (Boolean.FALSE.equals(fieldObject.getJavaType())) {
-                if (Boolean.TRUE.equals(fieldObject.getListType())) {
-                    returnElement.append("{\n" + BLANKS);
-                }
+                returnElement.append("{\n" + BLANKS);
                 GraphQLMethodObject methodObject2 = new GraphQLMethodObject();
                 createClassDefinitions(typeDetails, exTye, methodObject2, fieldDefinition.getType().getName(), typeRegistry, new JSONObject(), returnElement);
-                if (Boolean.TRUE.equals(fieldObject.getListType())) {
-                    returnElement.append("\n}");
-                }
+                returnElement.append("\n}");
                 obj.put(name, examples.get(exTye.getSimpleName()));
             }
             fieldObject.setType(fieldDefinition.getType().getName());
